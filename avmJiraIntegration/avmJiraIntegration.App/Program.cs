@@ -9,10 +9,11 @@ namespace avmJiraIntegration.App
 	{
 		static void Main(string[] args)
 		{
-			Console.WriteLine(Integration("username","password","project-name"));
+			var allIssues = Integration("username", "password", "project-name").GetAwaiter();
+			
 		}
 
-		static async Task<string> Integration(string username, string password, string project)
+		static async Task<List<JiraIssue>> Integration(string username, string password, string project)
 		{
 			var services = new ServiceLocator();
 			var credentials = new Atlassian.Jira.JiraCredentials(username, password);
@@ -37,7 +38,9 @@ namespace avmJiraIntegration.App
              */
 
 			IEnumerable<IssueStatus> listaStatus = await jira.Statuses.GetStatusesAsync();
-			
+
+
+			List<JiraIssue> list = new List<JiraIssue>();
 
 			var issues = jira.Issues;
 			var projetos = jira.Projects;
@@ -64,11 +67,35 @@ namespace avmJiraIntegration.App
 					Console.WriteLine(item.Assignee);
 					Console.WriteLine(item.Reporter);
 					Console.WriteLine(item.Status.Description);
+
+					list.Add(getIssue(item));
 				}
 			}
 			Console.WriteLine("===============================================");
 
-			return string.Empty;
+			return list;
 		}
+
+		private static JiraIssue getIssue(Issue item)
+		{
+
+			JiraIssue jiraissue = new JiraIssue();
+
+			jiraissue.Project = (item.Project == null ? "" : item.Project.ToString());
+			jiraissue.Key = (item.Key == null ? "" : item.Key.ToString());
+			jiraissue.Summary = (item.Summary == null ? "" : item.Summary.ToString());
+			jiraissue.Description = (item.Description == null ? "" : item.Description.ToString());
+			jiraissue.Status = (item.Status == null ? "" : item.Status.Name.ToString() + "(" + item.Status.Id.ToString() + ")");
+			jiraissue.Priority = (item.Priority == null ? null : item.Priority.Name + "(" + item.Priority.Id + ")");
+			jiraissue.Reporter = (item.Reporter == null ? "" : item.Reporter.ToString());
+			jiraissue.Assignee = (item.Assignee == null ? "" : item.Assignee.ToString());
+			jiraissue.DueDate = item.DueDate;
+			jiraissue.Created = item.Created;
+			jiraissue.Updated = item.Updated;
+			jiraissue.Resolution = item.ResolutionDate;
+
+			return jiraissue;
+		}
+
 	}
 }
